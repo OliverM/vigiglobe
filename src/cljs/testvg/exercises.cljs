@@ -12,3 +12,10 @@
 
 (defn test1 []
   [timer])
+
+(defn test2 []
+  [timer])
+
+(defn test3 [])
+
+(defn bonus [])
