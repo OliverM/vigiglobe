@@ -2,14 +2,16 @@
     (:require [reagent.core :as reagent :refer [atom]]
               [reagent.session :as session]
               [secretary.core :as secretary :include-macros true]
-              [accountant.core :as accountant]))
+              [accountant.core :as accountant]
+              [testvg.exercises :as ex]))
 
 ;; -------------------------
 ;; Views
 
 (defn home-page []
   [:div [:h2 "Welcome to testvg"]
-   [:div [:a {:href "/about"} "go to about page"]]])
+   [:div [:a {:href "/about"} "go to about page"]]
+   [:div [:a {:href "/test1"} "Go to the first test page."]]])
 
 (defn about-page []
   [:div [:h2 "About testvg"]
@@ -26,6 +28,9 @@
 
 (secretary/defroute "/about" []
   (session/put! :current-page #'about-page))
+
+(secretary/defroute "/test1" []
+  (session/put! :current-page #'ex/test1))
 
 ;; -------------------------
 ;; Initialize app
