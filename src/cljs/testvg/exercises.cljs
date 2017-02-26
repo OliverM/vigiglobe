@@ -11,7 +11,9 @@
       [:div "Seconds since starting: " @seconds-since])))
 
 (defn test1 []
-  [timer])
+  [:div
+   [timer]
+   [:div [:a {:href "/"} "Go back to the home page."]]])
 
 (defn test2 []
   [timer])
