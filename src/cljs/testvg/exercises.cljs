@@ -38,9 +38,8 @@
   []
   (let [seconds-since (r/atom 0)
         update (r/atom true)
-        _ (js/setInterval #(when @update
-                             (swap! seconds-since inc))
-                          1000)]
+        _ (js/setInterval
+           #(when @update (swap! seconds-since inc)) 1000)]
     [seconds-since update]))
 
 (defn pausable-counter-view
@@ -48,7 +47,7 @@
   a view that displays the counter value and a control pausing that value."
   [[counter update]]
   [:div
-   "Seconds since starting: " @counter
+   "Seconds since starting: " @counter " "
    [:button {:on-click #(swap! update not)}
     (if @update "Pause" "Resume")]])
 
@@ -58,4 +57,37 @@
      [pausable-counter-view pausable-counter]
      [:div [:a {:href "/"} "Go back to the home page."]]]))
 
-(defn bonus [])
+
+
+;; multiple counters largely inspired by Reagents todo demo
+
+(def counters (r/atom (sorted-map)))
+(def counter-num (r/atom 0))
+
+(defn add-counter []
+  (let [posn (swap! counter-num inc)]
+    (swap! counters assoc posn
+           {:posn posn :state (pausable-counter-gen)})))
+
+(defn delete-counter [posn]
+  (swap! counters dissoc posn))
+
+(defn deleteable-counter-view
+  [{:keys [posn state]}]
+  [:div
+   [:div {:style {:display "inline-block"}}
+    [pausable-counter-view state]]
+   [:button {:on-click #(delete-counter posn)} "Delete"]])
+
+(defn deleteable-counter-list
+  []
+  [:div
+   (for [counter (vals @counters)]
+     ^{:key (:posn counter)} [deleteable-counter-view counter])
+   [:button {:on-click #(add-counter)}
+    "Add counter"]])
+
+(defn bonus []
+  [:div
+   [deleteable-counter-list]
+   [:div [:a {:href "/"} "Go back to the home page."]]])
