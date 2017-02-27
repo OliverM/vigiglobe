@@ -12,6 +12,7 @@
 
 (defn test1 []
   [:div
+   [:h3 "A reagent timer."]
    [timer]
    [:div [:a {:href "/"} "Go back to the home page."]]])
 
@@ -30,6 +31,7 @@
 (defn test2 []
   (let [counter (counter-gen)]
     [:div
+     [:h3 "Two views of the same timer."]
      [ counter-view counter ]
      [ counter-view counter ]
      [:div [:a {:href "/"} "Go back to the home page."]]]))
@@ -54,9 +56,9 @@
 (defn test3 []
   (let [pausable-counter (pausable-counter-gen)]
     [:div
+     [:h3 "A timer you can pause."]
      [pausable-counter-view pausable-counter]
      [:div [:a {:href "/"} "Go back to the home page."]]]))
-
 
 
 ;; multiple counters largely inspired by Reagents todo demo
@@ -82,10 +84,10 @@
 (defn deleteable-counter-list
   []
   [:div
+   [:h3 "Timers you can create, delete and pause."]
    (for [counter (vals @counters)]
      ^{:key (:posn counter)} [deleteable-counter-view counter])
-   [:button {:on-click #(add-counter)}
-    "Add counter"]])
+   [:button {:on-click #(add-counter)} "Add counter"]])
 
 (defn bonus []
   [:div
