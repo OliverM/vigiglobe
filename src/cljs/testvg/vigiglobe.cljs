@@ -14,8 +14,8 @@
   interrogation."
   "vigiglobe-Earthquake")
 
-(def chart-width 500)
-(def chart-height 400)
+(def chart-dim {:width 500
+                :height 400})
 
 (defn default-handler [response]
   "Generic successful API response handler."
@@ -25,14 +25,21 @@
   "Generic failed API response handler."
   (.log js/console (str "API error: " status " " status-text)))
 
-(defn data-received-handler
+(defn linechart-data-received
   [response]
-  (let [data (get-in response [:data "messages"])
-        time-start (->> data first first (.parse js/Date))
-        time-end (->> data last first (.parse js/Date))
+  (let [data (map
+              (fn [[timestamp value]]
+                [(.parse js/Date timestamp) value])
+              (get-in response [:data "messages"]))
+        time-start (-> data first first)
+        time-end (-> data last first)
         xscale (-> (.scaleTime js/d3)
                    (.domain (array time-start time-end))
-                   (.range (array 0 chart-width)))]
+                   (.range (array 0 (:width chart-dim))))
+        v-extent (.extent js/d3 (clj->js (map second data)))
+        yscale (-> (.scaleLinear js/d3)
+                   (.domain v-extent)
+                   (.range (array (:height chart-dim) 0)))]
     (.log js/console (xscale time-end))
     ))
 
@@ -51,7 +58,7 @@
                           :timeFrom timestamp
                           :granularity "minute"}
                  :response-format :transit
-                 :handler data-received-handler
+                 :handler linechart-data-received
                  :error-handler default-error-handler}))
 
 
