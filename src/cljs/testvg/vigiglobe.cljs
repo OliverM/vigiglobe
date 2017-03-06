@@ -27,10 +27,9 @@
 
 (defn linechart-data-received
   [response]
-  (let [data (map
-              (fn [[timestamp value]]
-                [(.parse js/Date timestamp) value])
-              (get-in response [:data "messages"]))
+  (let [data (map (fn [[timestamp value]]
+                    [(.parse js/Date timestamp) value])
+                  (get-in response [:data "messages"]))
         time-start (-> data first first)
         time-end (-> data last first)
         xscale (-> (.scaleTime js/d3)
