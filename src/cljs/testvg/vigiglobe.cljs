@@ -14,6 +14,9 @@
   interrogation."
   "vigiglobe-Earthquake")
 
+(def chart-width 500)
+(def chart-height 400)
+
 (defn default-handler [response]
   "Generic successful API response handler."
   (.log js/console (str response)))
@@ -21,6 +24,17 @@
 (defn default-error-handler [{:keys [status status-text]}]
   "Generic failed API response handler."
   (.log js/console (str "API error: " status " " status-text)))
+
+(defn data-received-handler
+  [response]
+  (let [data (get-in response [:data "messages"])
+        time-start (->> data first first (.parse js/Date))
+        time-end (->> data last first (.parse js/Date))
+        xscale (-> (.scaleTime js/d3)
+                   (.domain (array time-start time-end))
+                   (.range (array 0 chart-width)))]
+    (.log js/console (xscale time-end))
+    ))
 
 (defn last-hour-timestamp
   "Generate an ISO timestamp one hour before the current system time."
@@ -36,7 +50,8 @@
   (GET data-src {:params {:project_id project-id
                           :timeFrom timestamp
                           :granularity "minute"}
-                 :handler default-handler
+                 :response-format :transit
+                 :handler data-received-handler
                  :error-handler default-error-handler}))
 
 
