@@ -14,38 +14,7 @@
   interrogation."
   "vigiglobe-Earthquake")
 
-(def chart-dim {:width 500
-                :height 400})
-
-(defn line-chart
-  "Generate a linechart using the supplied data."
-  [data]
-  (let [data (map (fn [[timestamp value]]
-                    [(.parse js/Date timestamp) value])
-                  data)
-        time-start (-> data first first)
-        time-end (-> data last first)
-        xscale (-> (.scaleTime js/d3)
-                   (.domain (array time-start time-end))
-                   (.range (array 0 (:width chart-dim))))
-        v-extent (.extent js/d3 (clj->js (map second data)))
-        yscale (-> (.scaleLinear js/d3)
-                   (.domain v-extent)
-                   (.range (array (:height chart-dim) 0)))
-        line (-> (.line js/d3)
-                 (.x (fn [[timestamp _] _ _] (xscale timestamp)))
-                 (.y (fn [[_ value] _ _] (yscale value))))]
-    (.log js/console (line (clj->js data)))
-    ))
-
-(defn chart []
-  [:div
-   [:h3 "The test chart"]
-   [:div [:a {:href "/"} "Go back to the home page."]]])
-
-(defn default-handler [response]
-  "Generic successful API response handler."
-  (.log js/console (str response)))
+(def linechart-data (r/atom nil))
 
 (defn default-error-handler [{:keys [status status-text]}]
   "Generic failed API response handler."
@@ -53,7 +22,7 @@
 
 (defn linechart-data-received
   [response]
-  (line-chart (get-in response [:data "messages"])))
+  (reset! linechart-data (get-in response [:data "messages"])))
 
 (defn last-hour-timestamp
   "Generate an ISO timestamp one hour before the current system time."
@@ -72,3 +41,44 @@
                  :response-format :transit
                  :handler linechart-data-received
                  :error-handler default-error-handler}))
+
+(def chart-dim {:width 500 :height 300})
+
+
+(defn line-chart
+  "Generate a linechart using the supplied data."
+  []
+  (when @linechart-data
+    (let [data (map (fn [[timestamp value]]
+                      [(.parse js/Date timestamp) value])
+                    @linechart-data)
+          time-start (-> data first first)
+          time-end (-> data last first)
+          xscale (-> (.scaleTime js/d3)
+                     (.domain (array time-start time-end))
+                     (.range (array 0 (:width chart-dim))))
+          v-extent (.extent js/d3 (clj->js (map second data)))
+          yscale (-> (.scaleLinear js/d3)
+                     (.domain v-extent)
+                     (.range (array (:height chart-dim) 0)))
+          line (-> (.line js/d3)
+                   (.x (fn [[timestamp _] _ _] (xscale timestamp)))
+                   (.y (fn [[_ value] _ _] (yscale value))))
+          path-data (line (clj->js data))]
+      [:svg {:viewBox (str "0 0 " (:width chart-dim)
+                           " " (:height chart-dim))
+             :width "100%"}
+       [:g [:path {:fill "none" :stroke "red" :d path-data}]]])))
+
+(defn refresh-line-chart
+  "Generate a button that, when pressed, launches a network request for fresh data."
+  []
+  [:button {:on-click #(minute-data (last-hour-timestamp))}
+   "Update the chart with the last hour's data"])
+
+(defn chart []
+  [:div
+   [:h3 "The test chart"]
+   [line-chart]
+   [refresh-line-chart]
+   [:div [:a {:href "/"} "Go back to the home page."]]])
