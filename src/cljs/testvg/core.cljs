@@ -4,7 +4,8 @@
               [secretary.core :as secretary :include-macros true]
               [accountant.core :as accountant]
               [testvg.exercises :as ex]
-              [testvg.vigiglobe :as vg]))
+              [testvg.linechart :as lc]
+              [testvg.circletimechart :as ctc]))
 
 ;; -------------------------
 ;; Views
@@ -16,8 +17,10 @@
    [:div [:a {:href "/test2"} "Go to the second test page."]]
    [:div [:a {:href "/test3"} "Go to the third test page."]]
    [:div [:a {:href "/bonus"} "Go to the bonus test page."]]
-   [:h3 "The Vigiglobe chart test."]
-   [:div [:a {:href "/chart"} "Go to the chart page."]]
+   [:h3 "The Vigiglobe linechart test."]
+   [:div [:a {:href "/linechart"} "Go to the chart page."]]
+   [:h3 "The Vigiglobe custom chart test."]
+   [:div [:a {:href "/circletimechart"} "Go to the custom chart page."]]
    [:h3 "Notes"]
    [:div [:a {:href "/about"} "Notes about the experience."]]])
 
@@ -55,8 +58,11 @@
 (secretary/defroute "/bonus" []
   (session/put! :current-page #'ex/bonus))
 
-(secretary/defroute "/chart" []
-  (session/put! :current-page #'vg/chart))
+(secretary/defroute "/linechart" []
+  (session/put! :current-page #'lc/chart))
+
+(secretary/defroute "/circletimechart" []
+  (session/put! :current-page #'ctc/chart))
 
 ;; -------------------------
 ;; Initialize app

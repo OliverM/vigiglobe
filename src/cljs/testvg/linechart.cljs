@@ -1,4 +1,4 @@
-(ns testvg.vigiglobe
+(ns testvg.linechart
   "Implement the Vigiglobe chart exercises using the API at
   http://api.vigiglobe.com/"
   (:require [reagent.core :as r]
@@ -44,7 +44,6 @@
 
 (def chart-dim {:width 500 :height 300})
 
-
 (defn line-chart
   "Generate a linechart using the supplied data."
   []
@@ -78,7 +77,7 @@
 
 (defn chart []
   [:div
-   [:h3 "The test chart"]
+   [:h3 "The line-chart"]
    [line-chart]
    [refresh-line-chart]
    [:div [:a {:href "/"} "Go back to the home page."]]])

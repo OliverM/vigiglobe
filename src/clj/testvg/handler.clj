@@ -29,8 +29,13 @@
 
 (defroutes routes
   (GET "/" [] (loading-page))
+  (GET "/test1" [] (loading-page))
+  (GET "/test2" [] (loading-page))
+  (GET "/test3" [] (loading-page))
+  (GET "/bonus" [] (loading-page))
+  (GET "/linechart" [] (loading-page))
+  (GET "/circletimechart" [] (loading-page))
   (GET "/about" [] (loading-page))
-  
   (resources "/")
   (not-found "Not Found"))
 
