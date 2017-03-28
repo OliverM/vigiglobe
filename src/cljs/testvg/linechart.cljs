@@ -21,8 +21,12 @@
   (.log js/console (str "API error: " status " " status-text)))
 
 (defn linechart-data-received
+  "Parse and store the supplied dataset."
   [response]
-  (reset! linechart-data (get-in response [:data "messages"])))
+  (reset! linechart-data (map
+                          (fn [[timestamp value]]
+                            [(js/Date. timestamp) value])
+                          (get-in response [:data "messages"]))))
 
 (defn last-hour-timestamp
   "Generate an ISO timestamp one hour before the current system time."
@@ -44,30 +48,95 @@
 
 (def chart-dim {:width 500 :height 300})
 
-(defn line-chart
-  "Generate a linechart using the supplied data."
-  []
-  (when @linechart-data
-    (let [data (map (fn [[timestamp value]]
-                      [(.parse js/Date timestamp) value])
-                    @linechart-data)
-          time-start (-> data first first)
-          time-end (-> data last first)
-          xscale (-> (.scaleTime js/d3)
-                     (.domain (array time-start time-end))
+(def chart-fns
+  "A map of functions shared between the chart rendering points (e.g. the
+  positioning of the overlay and the drawing of the chart data line)."
+  (atom {:xscale (-> (.scaleTime js/d3)
                      (.range (array 0 (:width chart-dim))))
-          v-extent (.extent js/d3 (clj->js (map second data)))
-          yscale (-> (.scaleLinear js/d3)
-                     (.domain v-extent)
+         :yscale (-> (.scaleLinear js/d3)
                      (.range (array (:height chart-dim) 0)))
+         :xbisect (.-left (.bisector js/d3 first))}))
+
+(defn update-scale
+  "Adjust the selected scale to reflect the new domain of data values recieved."
+  [new-domain scale-kw]
+  (let [scale (.domain (scale-kw @chart-fns) new-domain)]
+    (swap! chart-fns assoc scale-kw scale)
+    scale))
+
+(def overlay-metrics (r/atom {:x 0 :y 0 :vis "none" :caption ""}))
+
+(defn overlay
+  "A small detail view revealing the underlaying x-value on mouse-over."
+  []
+  (let [{:keys [vis caption x y]} @overlay-metrics]
+    [:g#focus {:style {:display vis}
+               :transform (str "translate(" x "," y ")")}
+     [:circle {:style {:fill "none" :stroke "steelblue"} :r "4.5"}]
+     [:text {:x "9" :dy "0.35em"} caption]]))
+
+(defn closest-datapoint
+  "Given a test-date, a position and the data points to the left and right of
+  that position in an array, determine which of the datapoints is the closest to
+  the test-date and return that datapoint. Here data points are pairs of dates
+  and values."
+  [test-date posn data]
+  (let [d0 (nth data (dec posn))
+        d1 (nth data posn)
+        d0-diff (- (first d0) test-date)
+        d1-diff (- test-date (first d1))]
+    (if (> d0-diff d1-diff) d0 d1)))
+
+(defn move-overlay
+  "Update the overlay metrics with the mouse position when the mouse moves over
+  the linechart."
+  [e]
+  (let [clientRect (-> e .-currentTarget .getBoundingClientRect)
+        newX (- (.-pageX e) (.-left clientRect))
+        newY (- (.-pageY e) (.-top clientRect))
+        dataX (-> @chart-fns :xscale (.invert newX))
+        xbisect (:xbisect @chart-fns)
+        posn (xbisect (clj->js @linechart-data) dataX 1)
+        datum (closest-datapoint dataX posn @linechart-data)]
+    (swap! overlay-metrics assoc
+           :x ((:xscale @chart-fns) (first datum))
+           :y ((:yscale @chart-fns) (second datum))
+           :caption (second datum))))
+
+(defn dataline
+  "The data line in the line chart."
+  []
+  (when-let [data @linechart-data]
+    (let [time-start (-> data first first)
+          time-end (-> data last first)
+          xscale (update-scale (array time-start time-end) :xscale)
+          yscale (update-scale (.extent js/d3 (clj->js (map second data)))
+                               :yscale)
           line (-> (.line js/d3)
                    (.x (fn [[timestamp _] _ _] (xscale timestamp)))
                    (.y (fn [[_ value] _ _] (yscale value))))
           path-data (line (clj->js data))]
-      [:svg {:viewBox (str "0 0 " (:width chart-dim)
-                           " " (:height chart-dim))
-             :width "100%"}
-       [:g [:path {:fill "none" :stroke "red" :d path-data}]]])))
+      [:g [:path {:fill "none" :stroke "red" :d path-data}]])))
+
+(defn line-chart
+  "Generate a linechart using the supplied data."
+  []
+  [:svg {:viewBox (str "0 0 " (:width chart-dim)
+                       " " (:height chart-dim))
+         :width "100%"}
+   [:g [:line {:stroke "grey"
+               :x1 0
+               :x2 (:width chart-dim)
+               :y1 (/ (:height chart-dim) 2)
+               :y2 (/ (:height chart-dim) 2)}]]
+   [dataline]
+   [overlay]
+   [:rect {:width (:width chart-dim)
+           :height (:height chart-dim)
+           :style {:fill "none" :pointer-events "all"}
+           :on-mouse-over #(swap! overlay-metrics assoc :vis "block")
+           :on-mouse-out #(swap! overlay-metrics assoc :vis "none")
+           :on-mouse-move move-overlay}]])
 
 (defn refresh-line-chart
   "Generate a button that, when pressed, launches a network request for fresh data."
