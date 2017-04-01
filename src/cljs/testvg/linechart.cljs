@@ -93,7 +93,8 @@
           xscale (update-scale (array time-start time-end) :xscale)
           yscale (update-scale (.extent js/d3 (clj->js magnitudes))
                                :yscale)
-          av-mag (yscale (/ (reduce + magnitudes) (count magnitudes)))
+          av-mag (/ (reduce + magnitudes) (count magnitudes))
+          scaled-av-mag (yscale av-mag)
           line (-> (.line js/d3)
                    (.x (fn [[timestamp _] _ _] (xscale timestamp)))
                    (.y (fn [[_ value] _ _] (yscale value))))
@@ -101,9 +102,10 @@
       [:g [:line {:stroke "grey"
                   :x1 0
                   :x2 (:width chart-dim)
-                  :y1 av-mag
-                  :y2 av-mag}]
-       [:text {:y (- av-mag 7) :font-size 12} "Average magnitude"]
+                  :y1 scaled-av-mag
+                  :y2 scaled-av-mag}]
+       [:text {:y (- scaled-av-mag 7) :font-size 12}
+        (str "Average magnitude: " (.round js/Math av-mag))]
        [:path {:fill "none" :stroke "red" :d path-data}]])))
 
 (defn line-chart
