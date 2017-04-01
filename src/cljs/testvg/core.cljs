@@ -17,9 +17,8 @@
    [:div [:a {:href "/test2"} "Go to the second test page."]]
    [:div [:a {:href "/test3"} "Go to the third test page."]]
    [:div [:a {:href "/bonus"} "Go to the bonus test page."]]
-   [:h3 "The Vigiglobe linechart test."]
-   [:div [:a {:href "/linechart"} "Go to the chart page."]]
-   [:h3 "The Vigiglobe custom chart test."]
+   [:h3 "The chart test pages."]
+   [:div [:a {:href "/linechart"} "Go to the linechart page."]]
    [:div [:a {:href "/circletimechart"} "Go to the custom chart page."]]
    [:h3 "Notes"]
    [:div [:a {:href "/about"} "Notes about the experience."]]])
