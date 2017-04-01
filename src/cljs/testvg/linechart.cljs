@@ -89,14 +89,22 @@
   (when-let [data @linechart-data]
     (let [time-start (-> data first first)
           time-end (-> data last first)
+          magnitudes (map second data)
           xscale (update-scale (array time-start time-end) :xscale)
-          yscale (update-scale (.extent js/d3 (clj->js (map second data)))
+          yscale (update-scale (.extent js/d3 (clj->js magnitudes))
                                :yscale)
+          av-mag (yscale (/ (reduce + magnitudes) (count magnitudes)))
           line (-> (.line js/d3)
                    (.x (fn [[timestamp _] _ _] (xscale timestamp)))
                    (.y (fn [[_ value] _ _] (yscale value))))
           path-data (line (clj->js data))]
-      [:g [:path {:fill "none" :stroke "red" :d path-data}]])))
+      [:g [:line {:stroke "grey"
+                  :x1 0
+                  :x2 (:width chart-dim)
+                  :y1 av-mag
+                  :y2 av-mag}]
+       [:text {:y (- av-mag 7) :font-size 12} "Average magnitude"]
+       [:path {:fill "none" :stroke "red" :d path-data}]])))
 
 (defn line-chart
   "Generate a linechart using the supplied data."
@@ -106,11 +114,6 @@
         full-height (+ (* 2 margin) (:height chart-dim))]
     [:svg {:viewBox (str "0 0 " full-width " " full-height)
            :width full-width}
-     [:g [:line {:stroke "grey"
-                 :x1 0
-                 :x2 full-width
-                 :y1 (/ full-height 2)
-                 :y2 (/ full-height 2)}]]
      [:g {:transform (str "translate(" margin "," margin ")")}
       [dataline]
       [overlay]
