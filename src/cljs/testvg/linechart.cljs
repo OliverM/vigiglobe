@@ -123,7 +123,7 @@
   []
   [:svg {:viewBox (str "0 0 " (:width chart-dim)
                        " " (:height chart-dim))
-         :width "100%"}
+         :width (:width chart-dim)}
    [:g [:line {:stroke "grey"
                :x1 0
                :x2 (:width chart-dim)
