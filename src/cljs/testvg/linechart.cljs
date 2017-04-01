@@ -142,10 +142,21 @@
               :on-mouse-move move-overlay}]]]))
 
 (defn refresh-line-chart
-  "Generate a button that, when pressed, launches a network request for fresh data."
+  "Automatically refresh the linechart with data every 60 seconds, and provide a
+  button that, when pressed, refreshes the data immediately, resetting the next
+  refresh to 60 seconds. The button caption displays the time remaining until
+  the next refresh."
   []
-  [:button {:on-click #(minute-data (last-hour-timestamp))}
-   "Update the chart with the last hour's data"])
+  (let [seconds-until (r/atom 0) ;; starting at zero triggers immediate update
+        refresh #(do (reset! seconds-until 60)
+                     (minute-data (last-hour-timestamp)))]
+    (js/setInterval #(swap! seconds-until dec) 1000) ;; capture return to cleanup
+    (fn []
+      (when (= @seconds-until 0) (refresh))
+      [:button {:on-click refresh}
+       (str "Automatic refresh in "
+            @seconds-until
+            " seconds, or click to update the chart with the last hour's data")])))
 
 (defn chart []
   [:div
