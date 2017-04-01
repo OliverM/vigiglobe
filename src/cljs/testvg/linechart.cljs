@@ -3,22 +3,10 @@
   http://api.vigiglobe.com/"
   (:require [reagent.core :as r]
             [ajax.core :refer [GET]]
-            [cljsjs.d3 :as d3]))
-
-(def data-src
-  "API root data-source URL."
-  "http://api.vigiglobe.com/api/statistics/v1/volume")
-
-(def project-id
-  "Project ID string, used in the Vigiglobe API to indentify the dataset under
-  interrogation."
-  "vigiglobe-Earthquake")
+            [cljsjs.d3 :as d3]
+            [testvg.chartutil :as c]))
 
 (def linechart-data (r/atom nil))
-
-(defn default-error-handler [{:keys [status status-text]}]
-  "Generic failed API response handler."
-  (.log js/console (str "API error: " status " " status-text)))
 
 (defn linechart-data-received
   "Parse and store the supplied dataset."
@@ -28,23 +16,15 @@
                             [(js/Date. timestamp) value])
                           (get-in response [:data "messages"]))))
 
-(defn last-hour-timestamp
-  "Generate an ISO timestamp one hour before the current system time."
-  []
-  (let [now (js/Date.)
-        hour (dec (.getHours now))]
-    (.setHours now hour)
-    (.toISOString now)))
-
 (defn minute-data
   "Get the data since the supplied timestamp, in minute granularity."
   [timestamp]
-  (GET data-src {:params {:project_id project-id
+  (GET c/data-src {:params {:project_id c/project-id
                           :timeFrom timestamp
                           :granularity "minute"}
                  :response-format :transit
                  :handler linechart-data-received
-                 :error-handler default-error-handler}))
+                 :error-handler c/default-error-handler}))
 
 (def chart-dim {:width 500 :height 300 :margin 30})
 
@@ -149,10 +129,10 @@
   []
   (let [seconds-until (r/atom 0) ;; starting at zero triggers immediate update
         refresh #(do (reset! seconds-until 60)
-                     (minute-data (last-hour-timestamp)))]
+                     (minute-data (c/last-hour-timestamp)))]
     (js/setInterval #(swap! seconds-until dec) 1000) ;; capture return to cleanup
     (fn []
-      (when (= @seconds-until 0) (refresh))
+      (when (<= @seconds-until 0) (refresh))
       [:button {:on-click refresh}
        (str "Automatic refresh in "
             @seconds-until
