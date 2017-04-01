@@ -46,7 +46,7 @@
                  :handler linechart-data-received
                  :error-handler default-error-handler}))
 
-(def chart-dim {:width 500 :height 300})
+(def chart-dim {:width 500 :height 300 :margin 30})
 
 (def chart-fns
   "A map of functions shared between the chart rendering points (e.g. the
@@ -121,22 +121,25 @@
 (defn line-chart
   "Generate a linechart using the supplied data."
   []
-  [:svg {:viewBox (str "0 0 " (:width chart-dim)
-                       " " (:height chart-dim))
-         :width (:width chart-dim)}
-   [:g [:line {:stroke "grey"
-               :x1 0
-               :x2 (:width chart-dim)
-               :y1 (/ (:height chart-dim) 2)
-               :y2 (/ (:height chart-dim) 2)}]]
-   [dataline]
-   [overlay]
-   [:rect {:width (:width chart-dim)
-           :height (:height chart-dim)
-           :style {:fill "none" :pointer-events "all"}
-           :on-mouse-over #(swap! overlay-metrics assoc :vis "block")
-           :on-mouse-out #(swap! overlay-metrics assoc :vis "none")
-           :on-mouse-move move-overlay}]])
+  (let [margin (:margin chart-dim)
+        full-width (+ (* 2 margin) (:width chart-dim))
+        full-height (+ (* 2 margin) (:height chart-dim))]
+    [:svg {:viewBox (str "0 0 " full-width " " full-height)
+           :width full-width}
+     [:g [:line {:stroke "grey"
+                 :x1 0
+                 :x2 full-width
+                 :y1 (/ full-height 2)
+                 :y2 (/ full-height 2)}]]
+     [:g {:transform (str "translate(" margin "," margin ")")}
+      [dataline]
+      [overlay]
+      [:rect {:width (:width chart-dim)
+              :height (:height chart-dim)
+              :style {:fill "none" :pointer-events "all"}
+              :on-mouse-over #(swap! overlay-metrics assoc :vis "block")
+              :on-mouse-out #(swap! overlay-metrics assoc :vis "none")
+              :on-mouse-move move-overlay}]]]))
 
 (defn refresh-line-chart
   "Generate a button that, when pressed, launches a network request for fresh data."
