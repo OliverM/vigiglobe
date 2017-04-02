@@ -12,6 +12,8 @@
 ;; 4) render time to next refresh graphically? Or set refresh to automatic
 ;; one-minute window and show that approaching compared to current time?
 
+(def chart-dim {:width 500 :height 500 :margin 30})
+
 (def period-matchings
   "A map from period durations to quads of period durations in
   seconds,comparison period durations, granularities, and English captions.
@@ -69,7 +71,42 @@
   "Update the model when a new period is selected by the user."
   [e]
   (let [new-period (keyword (.. e -target -value))]
+    (refresh new-period)
     (swap! appstate assoc :current-period new-period)))
+
+(defn historical-dataline
+  []
+  (let [data (:historical-data @appstate)
+        _ (.log js/console (clj->js data))
+        ]
+    [:g]))
+
+(defn current-dataline
+  []
+  (let [data (:current-data @appstate)
+        _ (.log js/console (clj->js data))
+        ]
+    [:g]))
+
+(defn circletimechart
+  "Generate the circular time chart."
+  []
+  (let [margin (:margin chart-dim)
+        full-width (+ (* 2 margin) (:width chart-dim))
+        full-height (+ (* 2 margin) (:height chart-dim))]
+    [:svg {:viewBox (str "0 0 " full-width " " full-height)
+           :width full-width}
+     [:g {:transform (str "translate(" margin "," margin ")")}
+      [historical-dataline]
+      [current-dataline]
+      ;; [overlay]
+      ;; [:rect {:width (:width chart-dim)
+      ;;         :height (:height chart-dim)
+      ;;         :style {:fill "none" :pointer-events "all"}
+      ;;         :on-mouse-over #(swap! overlay-metrics assoc :vis "block")
+      ;;         :on-mouse-out #(swap! overlay-metrics assoc :vis "none")
+      ;;         :on-mouse-move move-overlay}]
+      ]]))
 
 (defn controls
   "A UI to control the dataset being visualised."
@@ -83,5 +120,6 @@
 (defn chart []
   [:div
    [:h3 "The custom chart"]
+   [circletimechart]
    [controls]
    [:div [:a {:href "/"} "Go back to the home page."]]])
