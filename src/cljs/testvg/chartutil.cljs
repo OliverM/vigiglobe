@@ -36,10 +36,13 @@
                     :handler handler
                     :error-handler default-error-handler})))
 
+(defn last-period-timestamp
+  "Generate an ISO timestamp one period before the current system time, where a
+  period is specified in milliseconds."
+  [millis]
+  (-> (js/Date.) .getTime (- millis) js/Date. .toISOString))
+
 (defn last-hour-timestamp
   "Generate an ISO timestamp one hour before the current system time."
   []
-  (let [now (js/Date.)
-        hour (dec (.getHours now))]
-    (.setHours now hour)
-    (.toISOString now)))
+  (last-period-timestamp (* 1000 60 60)))

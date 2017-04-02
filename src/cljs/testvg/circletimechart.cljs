@@ -13,20 +13,57 @@
 ;; one-minute window and show that approaching compared to current time?
 
 (def period-matchings
-  "A map from period durations to quads of period durations in seconds,
-  comparison period differences, granularities, and English captions."
-  {:minute [60 :hour :minute "Compare incidence of the previous minute to the same minute an hour ago, in seconds."]
-   :hour [(* 60 60) :day :hour "Compare incidence of the previous hour to the same hour yesterday, in minutes."]
-   :day [(* 60 60 24) :week :hour "Compare incidence of the previous day to the same day a week ago, in hours."]
-   :week [(* 60 60 24 7) :month :hour "Compare incidence of the previous week to the same week a month ago, in hours."]
-   :month [(* 60 60 24 7 30) :year :day "Compare incidence of the previous month to the same month a year ago, in days."]})
+  "A map from period durations to quads of period durations in
+  seconds,comparison period durations, granularities, and English captions.
+  Takes no account of irregular month lengths (here defined as four weeks, e.g.
+  28 days) or leap years (all years are 365 days)."
+  (let [min-msecs (* 1000 60)
+        hour-msecs (* min-msecs 60)
+        day-msecs (* hour-msecs 24)
+        week-msecs (* day-msecs 7)
+        month-msecs (* week-msecs 4)
+        year-msecs (* day-msecs 365)]
+    {:minute [min-msecs hour-msecs :minute
+              "Compare incidence of the previous minute to the same minute an hour ago, in seconds."]
+     :hour [hour-msecs day-msecs :hour
+            "Compare incidence of the previous hour to the same hour yesterday, in minutes."]
+     :day [day-msecs week-msecs :hour
+           "Compare incidence of the previous day to the same day a week ago, in hours."]
+     :week [week-msecs month-msecs :hour
+            "Compare incidence of the previous week to the same week a month ago, in hours."]
+     :month [month-msecs year-msecs :day
+             "Compare incidence of the previous month to the same month a year ago, in days."]}))
 
 (def appstate
   "The full application state."
   (r/atom
    {:current-data []
+    :historical-data []
     :current-period :hour
     :data-refresh-seconds 0}))
+
+(defn gen-data-handler
+  "Generate a data-handler function to update the correct part of the state
+  map."
+  [state-map-key]
+  (fn [response]
+    (swap! appstate assoc state-map-key
+           (map
+            (fn [[timestamp value]]
+              [(js/Date. timestamp) value])
+            (get-in response [:data "messages"])))))
+
+(defn refresh
+  "Update the chart data based on the provided period."
+  [period]
+  (let [[msecs comparison granularity _] (period period-matchings)]
+    (c/get-period-data (c/last-period-timestamp msecs)
+                       (name granularity)
+                       (gen-data-handler :current-data))
+    (c/get-period-data (c/last-period-timestamp comparison)
+                       (c/last-period-timestamp (- comparison msecs))
+                       (name granularity)
+                       (gen-data-handler :historical-data))))
 
 (defn select-change-handler
   "Update the model when a new period is selected by the user."
