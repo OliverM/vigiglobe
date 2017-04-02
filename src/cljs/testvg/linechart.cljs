@@ -2,7 +2,6 @@
   "Implement the Vigiglobe chart exercises using the API at
   http://api.vigiglobe.com/"
   (:require [reagent.core :as r]
-            [ajax.core :refer [GET]]
             [cljsjs.d3 :as d3]
             [testvg.chartutil :as c]))
 
@@ -19,12 +18,7 @@
 (defn minute-data
   "Get the data since the supplied timestamp, in minute granularity."
   [timestamp]
-  (GET c/data-src {:params {:project_id c/project-id
-                          :timeFrom timestamp
-                          :granularity "minute"}
-                 :response-format :transit
-                 :handler linechart-data-received
-                 :error-handler c/default-error-handler}))
+  (c/get-period-data timestamp "minute" linechart-data-received))
 
 (def chart-dim {:width 500 :height 300 :margin 30})
 
