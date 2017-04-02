@@ -2,3 +2,4 @@
 /.nrepl-port
 /figwheel_server.log
 target/
+/Procfile
