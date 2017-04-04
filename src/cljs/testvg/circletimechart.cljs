@@ -13,6 +13,10 @@
 ;; one-minute window and show that approaching compared to current time?
 
 (def chart-dim {:width 500 :height 500 :margin 30})
+(assoc chart-dim
+       :radius (- (.min js/Math (:width chart-dim)
+                        (:height chart-dim))
+                  (:margin chart-dim)))
 
 (def period-matchings
   "A map from period durations to quads of period durations in
@@ -77,7 +81,17 @@
 (defn historical-dataline
   []
   (let [data (:historical-data @appstate)
-        _ (.log js/console (clj->js data))
+        time-start (-> data first first)
+        time-end (-> data last first)
+        magnitudes (map second data)
+        max-radius (:radius chart-dims)
+        rscale (-> (.scaleLinear js/d3)
+                   (.domain magnitudes) 
+                   (.range (array 100 max-radius))) ;; 100 is arbitrary
+        line (-> (.radialLine js/d3)
+                 (.angle (fn [[timestamp _] _ _] timestamp))
+                 (.radius (fn [[_ value] _ _] (rscale value))))
+
         ]
     [:g]))
 
