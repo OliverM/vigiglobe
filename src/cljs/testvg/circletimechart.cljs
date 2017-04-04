@@ -12,11 +12,10 @@
 ;; 4) render time to next refresh graphically? Or set refresh to automatic
 ;; one-minute window and show that approaching compared to current time?
 
-(def chart-dim {:width 500 :height 500 :margin 30})
-(assoc chart-dim
-       :radius (- (.min js/Math (:width chart-dim)
-                        (:height chart-dim))
-                  (:margin chart-dim)))
+(def chart-dim (-> {:width 500 :height 500 :margin 30}
+                   (assoc :radius (- (.min js/Math (:width chart-dim)
+                                           (:height chart-dim))
+                                     (:margin chart-dim)))))
 
 (def period-matchings
   "A map from period durations to quads of period durations in
@@ -78,29 +77,34 @@
     (refresh new-period)
     (swap! appstate assoc :current-period new-period)))
 
-(defn historical-dataline
-  []
-  (let [data (:historical-data @appstate)
+(defn dataline
+  "Given a data key and a colour, look up the data under that key in the
+  appstate and draw a line using that data, coloured by the line-colour."
+  [data-key line-colour]
+  (let [data (data-key @appstate)
         time-start (-> data first first)
         time-end (-> data last first)
         magnitudes (map second data)
-        max-radius (:radius chart-dims)
+        max-radius (:radius chart-dim)
         rscale (-> (.scaleLinear js/d3)
-                   (.domain magnitudes) 
+                   (.domain (.extent js/d3 (clj->js magnitudes)))
                    (.range (array 100 max-radius))) ;; 100 is arbitrary
+        ascale (-> (.scaleTime js/d3)
+                   (.domain (array time-start time-end))
+                   (.range (array 0 (* 2 (.-PI js/Math)))))
         line (-> (.radialLine js/d3)
-                 (.angle (fn [[timestamp _] _ _] timestamp))
+                 (.angle (fn [[timestamp _] _ _] (ascale timestamp)))
                  (.radius (fn [[_ value] _ _] (rscale value))))
+        path-data (line (clj->js data))]
+    (.log js/console (str {:scaled-timestamps (map #(-> % first ascale) data)
+                           :value-range (array 100 max-radius)
+                           :values magnitudes
+                           :values-extent (.extent js/d3 (clj->js magnitudes))
+                           :scaled-values (map rscale magnitudes)}))
+    [:g [:path {:fill "none" :stroke line-colour :d path-data}]]))
 
-        ]
-    [:g]))
-
-(defn current-dataline
-  []
-  (let [data (:current-data @appstate)
-        _ (.log js/console (clj->js data))
-        ]
-    [:g]))
+(defn historical-dataline [] (dataline :historical-data "grey"))
+(defn current-dataline [] (dataline :current-data "red"))
 
 (defn circletimechart
   "Generate the circular time chart."
