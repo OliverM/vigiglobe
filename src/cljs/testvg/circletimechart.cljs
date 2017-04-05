@@ -5,13 +5,6 @@
 
 (def chartdata (r/atom nil))
 
-;; 0) UI to set period under inspection
-;; 1) get current period's data
-;; 2) get comparison period's data
-;; 3) render data
-;; 4) render time to next refresh graphically? Or set refresh to automatic
-;; one-minute window and show that approaching compared to current time?
-
 (def chart-dim (-> {:width 500 :height 500 :margin 30 :inner-radius 75}
                    (assoc :outer-radius (-> (.min js/Math (:width chart-dim)
                                             (:height chart-dim))
