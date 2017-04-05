@@ -45,12 +45,10 @@
   (r/atom
    {:current-data []
     :historical-data []
-    :current-period :hour
-    :data-refresh-seconds 0
+    :current-period :day
     :ascale (-> (.scaleTime js/d3) (.range (array 0 (* 2 (.-PI js/Math)))))
     :rscale (-> (.scaleLinear js/d3) (.range (array (:inner-radius chart-dim)
-                                                    (:outer-radius chart-dim))))
-    :xbisect (.-left (.bisector js/d3 first))}))
+                                                    (:outer-radius chart-dim))))}))
 
 (defn update-scale
   "Adjust the selected scale to reflect the new domain of data values recieved."
@@ -98,6 +96,9 @@
                :r outer-r}]
      [:circle {:style {:fill "white" :stroke "silver"} :cx 0 :cy 0
                :r inner-r}]
+     [:line {:style {:stroke "silver"}
+             :x1 0 :x2 0
+             :y1 (- inner-r) :y2 (- outer-r)}]
      [:text {:text-anchor "middle" :y (- (- outer-r) 10)} "Start"]
      [:text {:x (- inner-r 10) :text-anchor "end"} "0"]
      [:text {:x (+ outer-r 10) :text-anchor "start"} "Max"]
@@ -139,15 +140,7 @@
                           "," (/ full-height 2) ")")}
       [grid]
       [historical-dataline]
-      [current-dataline]
-      ;; [overlay]
-      ;; [:rect {:width (:width chart-dim)
-      ;;         :height (:height chart-dim)
-      ;;         :style {:fill "none" :pointer-events "all"}
-      ;;         :on-mouse-over #(swap! overlay-metrics assoc :vis "block")
-      ;;         :on-mouse-out #(swap! overlay-metrics assoc :vis "none")
-      ;;         :on-mouse-move move-overlay}]
-      ]]))
+      [current-dataline]]]))
 
 (defn controls
   "A UI to control the dataset being visualised."
@@ -164,3 +157,5 @@
    [circletimechart]
    [controls]
    [:div [:a {:href "/"} "Go back to the home page."]]])
+
+(refresh (:current-period @appstate))
