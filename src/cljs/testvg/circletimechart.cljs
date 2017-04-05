@@ -5,10 +5,11 @@
 
 (def chartdata (r/atom nil))
 
-(def chart-dim (-> {:width 500 :height 500 :margin 30 :inner-radius 75}
-                   (assoc :outer-radius (-> (.min js/Math (:width chart-dim)
-                                            (:height chart-dim))
-                                      (- (:margin chart-dim))
+(def base-chart-dim {:width 500 :height 500 :margin 30 :inner-radius 75})
+(def chart-dim (-> base-chart-dim
+                   (assoc :outer-radius (-> (.min js/Math (:width base-chart-dim)
+                                            (:height base-chart-dim))
+                                      (- (:margin base-chart-dim))
                                       (/ 2)))))
 
 (def period-matchings
@@ -22,9 +23,9 @@
         week-msecs (* day-msecs 7)
         month-msecs (* week-msecs 4)
         year-msecs (* day-msecs 365)]
-    {:minute [min-msecs hour-msecs :minute
+    {:minute [min-msecs hour-msecs :second
               "Compare relative intensity of the previous minute to the same minute an hour ago, in seconds."]
-     :hour [hour-msecs day-msecs :hour
+     :hour [hour-msecs day-msecs :minute
             "Compare relative intensity of the previous hour to the same hour yesterday, in minutes."]
      :day [day-msecs week-msecs :hour
            "Compare relative intensity of the previous day to the same day a week ago, in hours."]
@@ -38,7 +39,7 @@
   (r/atom
    {:current-data []
     :historical-data []
-    :current-period :day
+    :current-period :hour
     :ascale (-> (.scaleTime js/d3) (.range (array 0 (* 2 (.-PI js/Math)))))
     :rscale (-> (.scaleLinear js/d3) (.range (array (:inner-radius chart-dim)
                                                     (:outer-radius chart-dim))))}))
@@ -82,7 +83,8 @@
 
 (defn grid
   []
-  (let [inner-r (:inner-radius chart-dim)
+  (let [_ @appstate
+        inner-r (:inner-radius chart-dim)
         outer-r (:outer-radius chart-dim)]
     [:g
      [:circle {:style {:fill "whitesmoke" :stroke "silver"} :cx 0 :cy 0
@@ -96,7 +98,7 @@
      [:text {:x (- inner-r 10) :text-anchor "end"} "0"]
      [:text {:x (+ outer-r 10) :text-anchor "start"} "Max"]
      [:g {:transform (str "translate(0," (+ outer-r 25) ")")}
-      [:g 
+      [:g
        [:text {:text-anchor "end"} "Current"]
        [:line {:stroke "red" :x1 10 :x2 40 :y1 -6 :y2 -6}]]
       [:g {:transform "translate(0, 20)"}
@@ -111,7 +113,7 @@
         time-start (-> data first first)
         time-end (-> data last first)
         magnitudes (map second data)
-        rscale (update-scale (.extent js/d3 (clj->js magnitudes)) :rscale) 
+        rscale (update-scale (.extent js/d3 (clj->js magnitudes)) :rscale)
         ascale (update-scale (array time-start time-end) :ascale)
         line (-> (.radialLine js/d3)
                  (.angle (fn [[timestamp _] _ _] (ascale timestamp)))
