@@ -12,10 +12,11 @@
 ;; 4) render time to next refresh graphically? Or set refresh to automatic
 ;; one-minute window and show that approaching compared to current time?
 
-(def chart-dim (-> {:width 500 :height 500 :margin 30}
-                   (assoc :radius (- (.min js/Math (:width chart-dim)
-                                           (:height chart-dim))
-                                     (:margin chart-dim)))))
+(def chart-dim (-> {:width 500 :height 500 :margin 30 :inner-radius 75}
+                   (assoc :outer-radius (-> (.min js/Math (:width chart-dim)
+                                            (:height chart-dim))
+                                      (- (:margin chart-dim))
+                                      (/ 2)))))
 
 (def period-matchings
   "A map from period durations to quads of period durations in
@@ -45,7 +46,18 @@
    {:current-data []
     :historical-data []
     :current-period :hour
-    :data-refresh-seconds 0}))
+    :data-refresh-seconds 0
+    :ascale (-> (.scaleTime js/d3) (.range (array 0 (* 2 (.-PI js/Math)))))
+    :rscale (-> (.scaleLinear js/d3) (.range (array (:inner-radius chart-dim)
+                                                    (:outer-radius chart-dim))))
+    :xbisect (.-left (.bisector js/d3 first))}))
+
+(defn update-scale
+  "Adjust the selected scale to reflect the new domain of data values recieved."
+  [new-domain scale-kw]
+  (let [scale (.domain (scale-kw @appstate) new-domain)]
+    (swap! appstate assoc scale-kw scale)
+    scale))
 
 (defn gen-data-handler
   "Generate a data-handler function to update the correct part of the state
@@ -85,19 +97,13 @@
         time-start (-> data first first)
         time-end (-> data last first)
         magnitudes (map second data)
-        max-radius (:radius chart-dim)
-        rscale (-> (.scaleLinear js/d3)
-                   (.domain (.extent js/d3 (clj->js magnitudes)))
-                   (.range (array 100 max-radius))) ;; 100 is arbitrary
-        ascale (-> (.scaleTime js/d3)
-                   (.domain (array time-start time-end))
-                   (.range (array 0 (* 2 (.-PI js/Math)))))
+        rscale (update-scale (.extent js/d3 (clj->js magnitudes)) :rscale) 
+        ascale (update-scale (array time-start time-end) :ascale)
         line (-> (.radialLine js/d3)
                  (.angle (fn [[timestamp _] _ _] (ascale timestamp)))
                  (.radius (fn [[_ value] _ _] (rscale value))))
         path-data (line (clj->js data))]
     (.log js/console (str {:scaled-timestamps (map #(-> % first ascale) data)
-                           :value-range (array 100 max-radius)
                            :values magnitudes
                            :values-extent (.extent js/d3 (clj->js magnitudes))
                            :scaled-values (map rscale magnitudes)}))
@@ -114,7 +120,8 @@
         full-height (+ (* 2 margin) (:height chart-dim))]
     [:svg {:viewBox (str "0 0 " full-width " " full-height)
            :width full-width}
-     [:g {:transform (str "translate(" margin "," margin ")")}
+     [:g {:transform (str "translate(" (+  margin (/ full-width 2))
+                          "," (+  margin (/ full-height 2)) ")")}
       [historical-dataline]
       [current-dataline]
       ;; [overlay]
