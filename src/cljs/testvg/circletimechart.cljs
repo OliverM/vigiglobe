@@ -30,15 +30,15 @@
         month-msecs (* week-msecs 4)
         year-msecs (* day-msecs 365)]
     {:minute [min-msecs hour-msecs :minute
-              "Compare incidence of the previous minute to the same minute an hour ago, in seconds."]
+              "Compare relative intensity of the previous minute to the same minute an hour ago, in seconds."]
      :hour [hour-msecs day-msecs :hour
-            "Compare incidence of the previous hour to the same hour yesterday, in minutes."]
+            "Compare relative intensity of the previous hour to the same hour yesterday, in minutes."]
      :day [day-msecs week-msecs :hour
-           "Compare incidence of the previous day to the same day a week ago, in hours."]
+           "Compare relative intensity of the previous day to the same day a week ago, in hours."]
      :week [week-msecs month-msecs :hour
-            "Compare incidence of the previous week to the same week a month ago, in hours."]
+            "Compare relative intensity of the previous week to the same week a month ago, in hours."]
      :month [month-msecs year-msecs :day
-             "Compare incidence of the previous month to the same month a year ago, in days."]}))
+             "Compare relative intensity of the previous month to the same month a year ago, in days."]}))
 
 (def appstate
   "The full application state."
@@ -89,6 +89,26 @@
     (refresh new-period)
     (swap! appstate assoc :current-period new-period)))
 
+(defn grid
+  []
+  (let [inner-r (:inner-radius chart-dim)
+        outer-r (:outer-radius chart-dim)]
+    [:g
+     [:circle {:style {:fill "whitesmoke" :stroke "silver"} :cx 0 :cy 0
+               :r outer-r}]
+     [:circle {:style {:fill "white" :stroke "silver"} :cx 0 :cy 0
+               :r inner-r}]
+     [:text {:text-anchor "middle" :y (- (- outer-r) 10)} "Start"]
+     [:text {:x (- inner-r 10) :text-anchor "end"} "0"]
+     [:text {:x (+ outer-r 10) :text-anchor "start"} "Max"]
+     [:g {:transform (str "translate(0," (+ outer-r 25) ")")}
+      [:g 
+       [:text {:text-anchor "end"} "Current"]
+       [:line {:stroke "red" :x1 10 :x2 40 :y1 -6 :y2 -6}]]
+      [:g {:transform "translate(0, 20)"}
+       [:text {:text-anchor "end"} "Historical"]
+       [:line {:stroke "grey" :x1 10 :x2 40 :y1 -6 :y2 -6}]]]]))
+
 (defn dataline
   "Given a data key and a colour, look up the data under that key in the
   appstate and draw a line using that data, coloured by the line-colour."
@@ -103,10 +123,6 @@
                  (.angle (fn [[timestamp _] _ _] (ascale timestamp)))
                  (.radius (fn [[_ value] _ _] (rscale value))))
         path-data (line (clj->js data))]
-    (.log js/console (str {:scaled-timestamps (map #(-> % first ascale) data)
-                           :values magnitudes
-                           :values-extent (.extent js/d3 (clj->js magnitudes))
-                           :scaled-values (map rscale magnitudes)}))
     [:g [:path {:fill "none" :stroke line-colour :d path-data}]]))
 
 (defn historical-dataline [] (dataline :historical-data "grey"))
@@ -118,10 +134,10 @@
   (let [margin (:margin chart-dim)
         full-width (+ (* 2 margin) (:width chart-dim))
         full-height (+ (* 2 margin) (:height chart-dim))]
-    [:svg {:viewBox (str "0 0 " full-width " " full-height)
-           :width full-width}
-     [:g {:transform (str "translate(" (+  margin (/ full-width 2))
-                          "," (+  margin (/ full-height 2)) ")")}
+    [:svg {:viewBox (str "0 0 " full-width " " full-height) :width full-width}
+     [:g {:transform (str "translate(" (/ full-width 2)
+                          "," (/ full-height 2) ")")}
+      [grid]
       [historical-dataline]
       [current-dataline]
       ;; [overlay]
