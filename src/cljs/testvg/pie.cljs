@@ -6,10 +6,32 @@
 
 
 (def pie-data
-  (r/atom
-   [19168970 12420480 7351108 5711486 3212437 1795212 317900 268802 722469 68661
-   2143790 1870559 6534 6838974 2546000 43985910 3021219.25 3021219.25
-   3021219.25 3021219.25 1370000 770000 371465 2022828 711610]))
+  (r/atom [{:value 19168970 :caption "!"}
+           {:value 12420480 :caption "!"}
+           {:value 7351108 :caption "!"}
+           {:value 5711486 :caption "!"}
+           {:value 3212437 :caption "!"}
+           {:value 1795212 :caption "!"}
+           {:value 317900 :caption "!"}
+           {:value 268802 :caption "!"}
+           {:value 722469 :caption "!"}
+           {:value 68661 :caption "!"}
+           {:value 2143790 :caption "!"}
+           {:value 1870559 :caption "!"}
+           {:value 6534 :caption "!"}
+           {:value 6838974 :caption "!"}
+           {:value 2546000 :caption "!"}
+           {:value 43985910 :caption "!"}
+           {:value 3021219.25 :caption "!"}
+           {:value 3021219.25 :caption "!"}
+           {:value 3021219.25 :caption "!"}
+           {:value 3021219.25 :caption "!"}
+           {:value 1370000 :caption "!"}
+           {:value 770000 :caption "!"}
+           {:value 371465 :caption "!"}
+           {:value 2022828 :caption "!"}
+           {:value 711610 :caption "!"}
+           ]))
 
 (def chart-dim {:width 500 :height 500 :margin 30})
 
@@ -21,7 +43,8 @@
         full-width (+ (* 2 margin) (:width chart-dim))
         full-height (+ (* 2 margin) (:height chart-dim))
         arcs ((-> (.pie js/d3)
-                  (.sort nil))
+                  (.sort nil)
+                  (.value #(aget % "value")))
               (clj->js @pie-data))
         arcfn (-> (.arc js/d3)
                   (.outerRadius radius)
