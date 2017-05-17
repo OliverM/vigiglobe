@@ -4,6 +4,7 @@
               [secretary.core :as secretary :include-macros true]
               [accountant.core :as accountant]
               [testvg.exercises :as ex]
+              [testvg.pie :as pie]
               [testvg.linechart :as lc]
               [testvg.circletimechart :as ctc]))
 
@@ -20,6 +21,8 @@
    [:h3 "The chart test pages."]
    [:div [:a {:href "/linechart"} "Go to the linechart page."]]
    [:div [:a {:href "/circletimechart"} "Go to the custom chart page."]]
+   [:h3 "Other utility charts done for experiments"]
+   [:div [:a {:href "/pie"} "Go to the piechart page."]]
    [:h3 "Notes"]
    [:div [:a {:href "/about"} "Notes about the experience."]]])
 
@@ -67,6 +70,9 @@
 
 (secretary/defroute "/linechart" []
   (session/put! :current-page #'lc/chart))
+
+(secretary/defroute "/pie" []
+  (session/put! :current-page #'pie/chart))
 
 (secretary/defroute "/circletimechart" []
   (session/put! :current-page #'ctc/chart))
