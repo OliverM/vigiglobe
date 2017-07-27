@@ -5,7 +5,7 @@
             [testvg.chartutil :as c]))
 
 
-(def pie-data
+(def old-pie-data
   (r/atom [{:value 19168970 :caption "Income Tax"}
            {:value 12420480 :caption "VAT"}
            {:value 7351108 :caption "Corporation Tax"}
@@ -31,6 +31,28 @@
            {:value 371465 :caption "Other capital expenditure"}
            {:value 2022828 :caption "Contribution to EU budget"}
            {:value 711610 :caption "Other non-voted current expenditure"}
+           ]))
+
+(def pie-data
+  (r/atom [
+           {:value 2500000 :caption "Capital expenditure"}
+           {:value 700000 :caption "Other non-voted current expenditure"}
+           {:value 2000000 :caption "Contribution to EU budget"}
+           {:value 43985910 :caption "Voted expenditure"}
+
+           {:value 6800000 :caption "Servicing of national debt"}
+           {:value 1000000 :caption "Deficit for the year"}
+
+           {:value 1900000 :caption "Banking stabilisation measure"}
+           {:value 2100000 :caption "Loan repayment and other capital receipts"}
+           {:value 68000 :caption "EU receipts"}
+           {:value 1300000 :caption "Other non-tax current revenue (including Dividends and Receipts from Local Government)"}
+           {:value 1800000 :caption "Central Bank surplus"}
+           {:value 2700000 :caption "Other tax revenue"}
+           {:value 5700000 :caption "Excise Duty"}
+           {:value 7400000 :caption "Corporation Tax"}
+           {:value 12400000 :caption "VAT"}
+           {:value 19200000 :caption "Income Tax"}
            ]))
 
 (def chart-dim {:width 500 :height 500 :margin 30})
