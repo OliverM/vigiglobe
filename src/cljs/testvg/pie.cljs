@@ -35,25 +35,29 @@
 
 (def pie-data
   (r/atom [
-           {:value 2500000 :caption "Capital expenditure"}
-           {:value 700000 :caption "Other non-voted current expenditure"}
-           {:value 2000000 :caption "Contribution to EU budget"}
-           {:value 43985910 :caption "Voted expenditure"}
+           {:value 2500000 :type :e :caption "Capital expenditure"}
+           {:value 700000 :type :e :caption "Other non-voted current expenditure"}
+           {:value 2000000 :type :e :caption "Contribution to EU budget"}
+           {:value 44000000 :type :e :caption "Voted expenditure"}
 
-           {:value 6800000 :caption "Servicing of national debt"}
-           {:value 1000000 :caption "Deficit for the year"}
+           {:value 6800000 :type :d :caption "Servicing of national debt"}
+           {:value 1000000 :type :d :caption "Deficit for the year"}
 
-           {:value 1900000 :caption "Banking stabilisation measure"}
-           {:value 2100000 :caption "Loan repayment and other capital receipts"}
-           {:value 68000 :caption "EU receipts"}
-           {:value 1300000 :caption "Other non-tax current revenue (including Dividends and Receipts from Local Government)"}
-           {:value 1800000 :caption "Central Bank surplus"}
-           {:value 2700000 :caption "Other tax revenue"}
-           {:value 5700000 :caption "Excise Duty"}
-           {:value 7400000 :caption "Corporation Tax"}
-           {:value 12400000 :caption "VAT"}
-           {:value 19200000 :caption "Income Tax"}
+           {:value 1900000 :type :i :caption "Banking stabilisation measure"}
+           {:value 2100000 :type :i :caption "Loan repayment and other capital receipts"}
+           {:value 68000 :type :i :caption "EU receipts"}
+           {:value 1300000 :type :i :caption "Other non-tax current revenue (including Dividends and Receipts from Local Government)"}
+           {:value 1800000 :type :i :caption "Central Bank surplus"}
+           {:value 2700000 :type :i :caption "Other tax revenue"}
+           {:value 5700000 :type :i :caption "Excise Duty"}
+           {:value 7400000 :type :i :caption "Corporation Tax"}
+           {:value 12400000 :type :i :caption "VAT"}
+           {:value 19200000 :type :i :caption "Income Tax"}
            ]))
+
+(def colours {:e "red"
+              :d "yellow"
+              :i "green"})
 
 (def chart-dim {:width 500 :height 500 :margin 30})
 
@@ -75,13 +79,13 @@
         ]
     [:svg {:viewBox (str "0 0 " full-width " " full-height)
            :width full-width}
-     [:g 
+     [:g
       (map-indexed
        (fn [index segment]
          ^{:key index}
          [:g {:transform (str "translate(" (/ full-height 2) "," (/ full-height 2) ")")}
-          [:path {:fill  "green" :stroke "white" :d (arcfn segment)}]
-          (let [coords (.centroid arcfn segment)] 
-            [:text {:fill "blue" :x (aget coords 0) :y (aget coords 1)}
+          [:path {:fill (colours (:type (nth data index))) :stroke "white" :d (arcfn segment)}]
+          (let [coords (.centroid arcfn segment)]
+            [:text {:fill "black" :x (aget coords 0) :y (aget coords 1)}
              (:caption (nth data index))])])
        arcs)]]))
